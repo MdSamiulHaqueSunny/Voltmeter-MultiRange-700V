@@ -1,0 +1,112 @@
+#include<avr/io.h>
+#include<math.h>
+
+int main()
+{
+
+	//variable declaration
+	double value;
+	unsigned char range;
+	double analog;
+	double adc_value;
+	unsigned int x,y,z;
+
+	//port initialization
+	DDRB = 0xF0;
+	DDRD = 0xFF;
+	DDRC = 0xF0;
+
+	//ADC initialization
+	ADMUX|=(1<< REFS0);
+	ADCSRA |= (1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
+	ADCSRA |=(1<<ADEN);
+	ADMUX &=~(1<<MUX0) & ~(1<<MUX1) & ~(1<<MUX2) & ~(1<<MUX3);
+
+
+	// In infinity loop u'll check which switch is on.Like 1,2 or 3.
+
+
+
+	while(1)
+	{
+		range = PINB & 0x07;
+		if( range == 0x00)
+		{
+			PORTC |= (1<<PC5);
+		}
+
+		else
+		{
+			PORTC &= ~(1<<PC5);
+		}
+		value = 0;
+		analog = 0;
+
+		ADCSRA|=(1<<ADSC); // start conversion
+
+		while (!(ADCSRA & (1<<ADIF)));
+
+		value = ADCL;
+		value += (ADCH<<8);
+		ADCSRA |= (1<<ADIF);
+
+		
+		
+
+		if (range == 0x01)
+		{
+			analog = (833.33 * value)/1024;
+			if(analog > 710)
+			{
+				analog = 0;
+			}
+		}
+
+		else if (range == 0x02)
+		{
+			analog = (416.667 * value)/1024;
+			if(analog > 353.56)
+			{
+				analog = 0;
+			}
+			
+		}
+
+		else if (range == 0x04)
+		{
+			analog = (166.667 * value)/1024;
+			if(analog > 142)
+			{
+				analog = 0;
+			}
+		}
+
+
+		//analog = analog/1024;
+
+		
+		adc_value=analog;
+
+
+		if(adc_value < 10)
+		{
+			x = 0;
+			y = 0;
+			z = adc_value;
+
+			PORTB = x;
+			PORTD = z;
+		}
+		else
+		{
+			x=adc_value/100;
+			PORTB= (x<<4);//1st d
+			adc_value=(adc_value/10-x*10);
+			y=adc_value;
+			adc_value=(adc_value*10-y*10);
+			z=adc_value;
+			PORTD =(y<<4)+ z; //2nd digit and 3rd digit
+		}
+	}
+
+}
